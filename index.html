@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>מציג קבצי HTML מקומי</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -10,17 +10,24 @@
     <style>
         body {
             font-family: 'Assistant', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            height: 100dvh;
         }
-        /* Hide scrollbar for the main page to allow iframe full focus */
-        body { overflow: hidden; }
+        .floating-dock {
+            bottom: max(1.25rem, env(safe-area-inset-bottom));
+            left: 1.25rem;
+        }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-900 h-screen flex flex-col">
+<body class="bg-slate-100 text-slate-900 flex flex-col">
 
-    <!-- Header & Controls -->
-    <header class="bg-white border-b border-slate-200 shadow-sm z-10 shrink-0">
+    <!-- Shared Hidden File Input -->
+    <input type="file" id="file-input" accept=".html,.htm" class="hidden" />
+
+    <!-- Header & Controls (Visible only before file selection) -->
+    <header id="main-header" class="bg-white border-b border-slate-200 shadow-sm z-10 shrink-0">
         <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
-            
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-indigo-600 text-white rounded-lg flex items-center justify-center text-xl shadow-sm">
                     <i class="fa-brands fa-html5"></i>
@@ -31,91 +38,102 @@
                 </div>
             </div>
 
-            <!-- Custom File Input Button -->
-            <div class="flex items-center gap-3">
-                <input type="file" id="file-input" accept=".html,.htm" class="hidden" />
-                <label for="file-input" class="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow transition-colors flex items-center gap-2">
-                    <i class="fa-solid fa-folder-open"></i>
-                    בחר קובץ HTML
-                </label>
-                
-                <button type="button" id="btn-refresh" onclick="clearViewer()" class="hidden bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors border border-slate-300">
-                    <i class="fa-solid fa-rotate-right"></i>
-                </button>
-            </div>
+            <label for="file-input" class="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow transition-colors flex items-center gap-2">
+                <i class="fa-solid fa-folder-open"></i>
+                בחר קובץ HTML
+            </label>
         </div>
     </header>
 
     <!-- Empty State -->
-    <div id="empty-state" class="flex-1 flex flex-col items-center justify-center p-6 text-center animate-[fadeIn_0.5s_ease]">
-        <div class="w-24 h-24 bg-indigo-50 text-indigo-200 rounded-full flex items-center justify-center text-4xl mb-4">
+    <div id="empty-state" class="flex-1 flex flex-col items-center justify-center p-6 text-center">
+        <div class="w-24 h-24 bg-indigo-50 text-indigo-300 rounded-full flex items-center justify-center text-4xl mb-4">
             <i class="fa-solid fa-file-code"></i>
         </div>
         <h2 class="text-xl font-bold text-slate-700 mb-2">לא נבחר קובץ להצגה</h2>
-        <p class="text-slate-500 text-sm max-w-md">
-            לחץ על הכפתור למעלה כדי לבחור קובץ (<code>.html</code>) מתוך הקבצים שלך באייפון, באייפד או במחשב. הקובץ יוצג כאן מיד.
+        <p class="text-slate-500 text-sm max-w-md mb-6">
+            לחץ על הכפתור כדי לבחור קובץ (<code>.html</code>) מתוך הקבצים שלך באייפון, באייפד או במחשב. הסרגל העליון ימוזער אוטומטית לתצוגה על כל המסך.
         </p>
+        <label for="file-input" class="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-md transition-transform active:scale-95 flex items-center gap-2">
+            <span>📂</span>
+            בחר קובץ לפתיחה
+        </label>
     </div>
 
-    <!-- Iframe Viewer (Hidden by default) -->
+    <!-- Full-Screen Iframe Viewer -->
     <main id="viewer-container" class="hidden flex-1 bg-white relative w-full h-full">
-        <!-- The iframe will take up all remaining space -->
         <iframe id="html-viewer" class="w-full h-full border-0" sandbox="allow-scripts allow-same-origin" title="HTML Preview"></iframe>
     </main>
+
+    <!-- Minimized Floating Emoji Control (Appears after HTML file is loaded) -->
+    <div id="floating-controls" class="hidden fixed floating-dock z-50 flex items-center gap-1.5">
+        <label for="file-input"
+               title="בחר קובץ HTML אחר"
+               aria-label="בחר קובץ HTML אחר"
+               class="cursor-pointer w-12 h-12 rounded-full bg-white/90 backdrop-blur-md border border-slate-300 shadow-lg flex items-center justify-center text-2xl opacity-80 hover:opacity-100 hover:scale-105 active:scale-95 transition-all select-none">
+            📂
+        </label>
+        <button type="button"
+                onclick="clearViewer()"
+                title="סגור קובץ והצג סרגל ראשי"
+                aria-label="סגור קובץ והצג סרגל ראשי"
+                class="w-7 h-7 rounded-full bg-slate-800/80 text-white text-xs shadow-md flex items-center justify-center opacity-75 hover:opacity-100 active:scale-95 transition-all">
+            ✕
+        </button>
+    </div>
 
     <script>
         const fileInput = document.getElementById('file-input');
         const iframe = document.getElementById('html-viewer');
+        const mainHeader = document.getElementById('main-header');
         const emptyState = document.getElementById('empty-state');
         const viewerContainer = document.getElementById('viewer-container');
-        const btnRefresh = document.getElementById('btn-refresh');
+        const floatingControls = document.getElementById('floating-controls');
 
-        // Listen for file selection
         fileInput.addEventListener('change', function(event) {
             const file = event.target.files[0];
-            
             if (!file) return;
 
-            // Ensure it's an HTML file (basic validation)
             if (!file.name.toLowerCase().endsWith('.html') && !file.name.toLowerCase().endsWith('.htm') && file.type !== 'text/html') {
                 alert('אנא בחר קובץ בפורמט HTML בלבד.');
+                fileInput.value = '';
                 return;
             }
 
-            // Read the file using FileReader API
             const reader = new FileReader();
-            
+
             reader.onload = function(e) {
-                const htmlContent = e.target.result;
-                
-                // Inject the raw HTML content into the iframe's srcdoc attribute
-                // srcdoc is a modern, secure way to render full HTML strings inside an iframe
-                iframe.srcdoc = htmlContent;
-                
-                // Hide empty state, show iframe and refresh button
+                iframe.srcdoc = e.target.result;
+
+                // Hide full top header & empty state, show full-screen viewer + floating emoji
+                mainHeader.classList.add('hidden');
                 emptyState.classList.add('hidden');
                 viewerContainer.classList.remove('hidden');
                 viewerContainer.classList.add('flex');
-                btnRefresh.classList.remove('hidden');
+                floatingControls.classList.remove('hidden');
+
+                // Allow re-selecting the same file again if modified
+                fileInput.value = '';
             };
 
             reader.onerror = function() {
                 alert('שגיאה בקריאת הקובץ. אנא נסה שוב.');
+                fileInput.value = '';
             };
 
-            // Read the file as plain text
             reader.readAsText(file);
         });
 
-        // Function to clear the viewer and return to empty state
         function clearViewer() {
             iframe.srcdoc = '';
-            fileInput.value = ''; // Reset file input
-            
+            fileInput.value = '';
+
+            // Restore top header & empty state, hide floating emoji
+            mainHeader.classList.remove('hidden');
             emptyState.classList.remove('hidden');
             viewerContainer.classList.add('hidden');
             viewerContainer.classList.remove('flex');
-            btnRefresh.classList.add('hidden');
+            floatingControls.classList.add('hidden');
         }
     </script>
 </body>
